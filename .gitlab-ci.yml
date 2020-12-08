@@ -1,0 +1,53 @@
+image: docker:19
+
+variables:
+  PROJECT_REPO: matthew-mcraven/ImageFilterRL
+  REMOTE_REPO: 10.0.0.8:15050
+
+  # Need to name images per commit to avoid docker-in-docker issues.
+  CI_VERSION: ci.${CI_COMMIT_SHORT_SHA}
+  LOCAL_CI_VERSION: ci.${CI_COMMIT_SHORT_SHA}.${CI_RUNNER_SHORT_TOKEN}
+
+  # Image that holds our library code.
+  IMAGE_NAME: imagefilterrl
+  LOCAL_IMAGE_NAME: matthew-mcraven/imagefilterrl/imagefilterrl
+  REMOTE_IMAGE_NAME: 10.0.0.8:15050/matthew-mcraven/imagefilterrl/imagefilterrl
+
+before_script:
+  # Must log-in to NAS's GitLab docker registy.
+  # The value of these tokens can be seen on Settings>CI/CD>Variables.
+  - docker login -u ${CI_USER} -p ${CI_TOKEN} ${CI_REGISTRY}
+  - docker info
+
+stages:
+  - Build Library
+  - Test
+  - Deploy
+
+#########
+# Build the boost / python dependencies of out project.
+# All jobs use GIT_LFS_SKIP_SMUDGE, which prevents GIT LFS from pulling large data files.
+#########
+Build Dependencies:
+  stage: Build Library
+  needs: []
+  script:
+    - docker build -f ./BuildLibrary.Dockerfile -t ${REMOTE_IMAGE_NAME}:${CI_VERSION} .
+    - docker push ${REMOTE_IMAGE_NAME}:${CI_VERSION}
+
+Run Tests:
+  stage: Test
+  needs: [Build Dependencies]
+  script:
+    - docker pull ${REMOTE_IMAGE_NAME}:${CI_VERSION}
+    - docker run --rm ${REMOTE_IMAGE_NAME}:${CI_VERSION}  /bin/sh -c "pip install -e . && pytest"
+    
+Deploy to PyPi:
+  rules:
+    - if: $CI_COMMIT_TAG
+  stage: Deploy
+  needs: [Build Dependencies, Run Tests]
+  script:
+    - docker pull ${REMOTE_IMAGE_NAME}:${CI_VERSION}
+    - echo "-u ${TWINE_USERNAME} -p ${TWINE_PASSWORD}"
+    - docker run --rm ${REMOTE_IMAGE_NAME}:${CI_VERSION} /bin/sh -c "pip install twine && python setup.py sdist && twine upload -u ${TWINE_USERNAME} -p ${TWINE_PASSWORD} dist/*"

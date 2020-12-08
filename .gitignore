@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 *.code-workspace
 venv*/*
+.DS_Store
 
 # C extensions
 *.so
