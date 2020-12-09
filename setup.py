@@ -2,7 +2,7 @@ from distutils.core import setup
 from setuptools import find_packages
 
 install_reqs = []
-install_reqs.extend(["torch ~= 1.7.0", "torchvision ~= 0.8.1", "librl == 0.2.4", "pytest ~= 6.1"])
+install_reqs.extend(["torch ~= 1.7.0", "torchvision ~= 0.8.1", "librl == 0.2.7", "pytest ~= 6.1"])
 
 setup(name='imgfiltrl',
       version='0.0.1',
