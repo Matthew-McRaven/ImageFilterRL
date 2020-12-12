@@ -10,7 +10,7 @@ class Action:
     def log_prob(self, weight_dict):
         return self.parent.log_prob(self, weight_dict, self.device)
 
-class SwapFilters:
+class SwapFilters(Action):
     def __init__(self, n0, n1, *args):
         super(SwapFilters, self).__init__(*args)
         self.n0 = n0

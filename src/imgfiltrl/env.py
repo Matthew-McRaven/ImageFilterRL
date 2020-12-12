@@ -72,7 +72,9 @@ class ImageClassifictionEnv(gym.Env):
             if action.where == _where.front: self.state.appendleft(action)
             elif action.where == _where.back: self.state.append(action)
         # Swap
-        elif isinstance(action, _actions.SwapFilters): pass
+        elif isinstance(action, _actions.SwapFilters):
+            n0, n1 = round(action.n0.item()), round(action.n1.item())
+            self.state[n0], self.state[n1] = self.state[n1], self.state[n0]
         # Delete
         elif isinstance(action, _actions.DeleteFilter):
             if action.where == _where.front: self.state.popleft()

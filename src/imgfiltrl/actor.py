@@ -70,7 +70,12 @@ class FilterTreeActor(nn.Module):
         if torch.eq(input[1], input[2:]).all():
             weight_dict['w_popf'] = torch.tensor(float("-inf")).to(input.device)
             weight_dict['w_popb'] = torch.tensor(float("-inf")).to(input.device)
-        weight_dict['w_swap'] = torch.tensor(float("-inf")).to(input.device)
+            weight_dict['w_swap'] = torch.tensor(float("-inf")).to(input.device)
+        # Get index of smallest filter type.
+        min_index = torch.argmin(input[:,0])
+        adjust = torch.tensor(.5, requires_grad=True)
+        weight_dict['w_swap_mindex'] = 0 - adjust
+        weight_dict['w_swap_maxdex'] =  -adjust + (min_index if input[min_index,0].item() == 0 else (input.shape[0]))
         for i in range(1, 3):
             mu = weight_dict[f'param_{i:02d}_mu']
             std = weight_dict[f'param_{i:02d}_std']**2
