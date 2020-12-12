@@ -138,14 +138,8 @@ def main(args):
         librl.nn.core.cnn.pool_def(1, 1, 0, 1, True, 'max'),
     ]
 
-    #critic_cnn = librl.nn.core.ConvolutionalKernel(layers, [4,2], dims[0])
-    #critic_mlp= librl.nn.core.MLPKernel(functools.reduce(lambda x,y: x*y, critic_cnn.output_dimension, 1))
     critic_kernel= librl.nn.core.MLPKernel(4*3, [100, 100])
-    #critic_kernel = librl.nn.core.sequential.SequentialKernel([critic_cnn, critic_mlp])
     critic = librl.nn.critic.ValueCritic(critic_kernel)
-    #actor_cnn = librl.nn.core.ConvolutionalKernel(layers, dims[1:], dims[0])
-    #actor_mlp = librl.nn.core.MLPKernel(functools.reduce(lambda x,y: x*y, actor_cnn.output_dimension, 1))
-    #actor_kernel = librl.nn.core.sequential.SequentialKernel([actor_cnn, actor_mlp])
     actor_kernel= librl.nn.core.MLPKernel(4*3, [100, 100])
     actor = imgfiltrl.actor.FilterTreeActor(actor_kernel, env.observation_space)
     agent = args.alg(hypers, critic, actor)
