@@ -11,12 +11,12 @@ class AddFilter(ProbabilisticLeaf):
 
 class AddConstrastStretch(AddFilter):
     def _sample(self, weight_dict, device):
-        return _AddContrastFilter(self.where, None, self, device)
+        return _AddContrastFilter(self.where, self, device)
     def _log_prob(self, action, weight_dict, device):
         return torch.tensor(0., requires_grad = True) 
 
 class AddClip(AddFilter):
     def _sample(self, weight_dict, device):
-        return _AddClipFilter(self.where, None, self, device)
+        return _AddClipFilter(self.where, 0., 255., self, device)
     def _log_prob(self, action, weight_dict, device):
         return torch.tensor(0., requires_grad = True) 

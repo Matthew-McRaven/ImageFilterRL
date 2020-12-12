@@ -1,3 +1,5 @@
+import collections
+
 import gym, gym.spaces
 import more_itertools
 import numpy as np
@@ -9,6 +11,8 @@ import librl.task, librl.task.classification
 import librl.train.classification.label
 
 import imgfiltrl.reward
+import imgfiltrl.actions as _actions
+from imgfiltrl.nodes import where as _where
 
 class ImageClassifictionEnv(gym.Env):
     def _shapes(self):
@@ -45,11 +49,12 @@ class ImageClassifictionEnv(gym.Env):
         self.normalize_fn = normalize_fn
 
     def reset(self):
-        self.state = None
+        self.state = collections.deque([], self.layer_depth)
         # TODO: reset classification networks.
         return self._convert_state(self.state)
 
-    def step(self, action):
+    def step(self, actions):
+        for action in actions: self._apply_action(action)
         total = []
         baseline_correct, augmented_correct = [], []
         for _ in range(self.adapt_steps + 1):
@@ -61,6 +66,18 @@ class ImageClassifictionEnv(gym.Env):
         reward_augmented = self.reward_fn(augmented_correct[-1], total[-1], self.classes, classifier=self.augmented)
         return self._convert_state(self.state), (reward_augmented-reward_baseline), False, {}
         
+    def _apply_action(self, action):
+        # Add
+        if isinstance(action, _actions.AddFilter):
+            if action.where == _where.front: self.state.appendleft(action)
+            elif action.where == _where.back: self.state.append(action)
+        # Swap
+        elif isinstance(action, _actions.SwapFilters): pass
+        # Delete
+        elif isinstance(action, _actions.DeleteFilter):
+            if action.where == _where.front: self.state.popleft()
+            elif action.where == _where.back: self.state.pop()
+        else: raise NotImplementedError(f"Don't know this filter type: {type(action)}")
     def _transform_baseline(self):
         return self.normalize_fn
 
@@ -109,7 +126,6 @@ class ImageClassifictionEnv(gym.Env):
 
     def _convert_state(self, state):
         np_state = np.zeros((self.layer_depth, self.layer_params))
-        if state != None:
-            raise NotImplementedError()
-        
+        if state:
+            for idx, filter in enumerate(state): np_state[idx] = filter.array()
         return np_state

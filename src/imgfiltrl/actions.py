@@ -1,3 +1,8 @@
+import numpy as np
+
+import libimg
+
+from imgfiltrl.filters import Filters as _Filters
 class Action:
     def __init__(self, parent, device):
         self.parent = parent
@@ -14,13 +19,25 @@ class SwapFilters:
 class DeleteFilter(Action):
     def __init__(self, where, *args):
         super(DeleteFilter, self).__init__(*args)
-
-class AddContrastFilter(Action):
+        self.where = where
+class AddFilter(Action):
     def __init__(self, where, filter, *args):
-        super(AddContrastFilter, self).__init__(*args)
+        super(AddFilter, self).__init__(*args)
+        self.where = where
         self.filter = filter
+class AddContrastFilter(AddFilter):
+    def __init__(self, where, *args):
+        filter = None
+        super(AddContrastFilter, self).__init__(where, filter, *args)
 
-class AddClipFilter(Action):
-    def __init__(self, where, filter, *args):
-        super(AddClipFilter, self).__init__(*args)
-        self.filter = filter
+    def array(self):
+        return np.asarray([_Filters.ContrastStretch, 0, 0, 0], dtype=np.int)
+
+class AddClipFilter(AddFilter):
+    def __init__(self, where, min_i, max_i, *args):
+        self.min_i, self.max_i = min_i, max_i
+        filter = None
+        super(AddClipFilter, self).__init__(where, filter, *args)
+
+    def array(self):
+        return np.asarray([_Filters.Clip, 0, self.min_i, self.max_i], dtype=np.int)

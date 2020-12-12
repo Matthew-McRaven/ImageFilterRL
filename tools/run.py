@@ -167,7 +167,7 @@ if __name__ == "__main__":
     learn_alg_group.set_defaults(alg=vpg_helper)
     # Task distribution hyperparams.
     parser.add_argument("--epochs", default=10, type=int, help="Number of epochs for which to train the generator network.")
-    parser.add_argument("--adapt-steps", dest="adapt_steps", default=2, type=int, help="Number of epochs which to the generated network.")
+    parser.add_argument("--adapt-steps", dest="adapt_steps", default=20, type=int, help="Number of epochs which to the generated network.")
     parser.add_argument("--task-count", dest="task_count", default=3, type=int, help="Number of times of trials of the generator per epoch.")
     args = parser.parse_args()
     main(args)

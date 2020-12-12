@@ -70,7 +70,7 @@ class FilterTreeActor(nn.Module):
         if torch.eq(input[1], input[2:]).all():
             weight_dict['w_popf'] = torch.tensor(float("-inf")).to(input.device)
             weight_dict['w_popb'] = torch.tensor(float("-inf")).to(input.device)
-            weight_dict['w_swap'] = torch.tensor(float("-inf")).to(input.device)
+        weight_dict['w_swap'] = torch.tensor(float("-inf")).to(input.device)
         for i in range(1, 3):
             mu = weight_dict[f'param_{i:02d}_mu']
             std = weight_dict[f'param_{i:02d}_std']**2
