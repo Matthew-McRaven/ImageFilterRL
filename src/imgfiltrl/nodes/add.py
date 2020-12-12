@@ -19,17 +19,14 @@ class AddConstrastStretch(AddFilter):
 
 class AddClip(AddFilter):
     def _sample(self, weight_dict, device):
-        sigmoid = torch.nn.functional.sigmoid
         lb, ub = weight_dict['p_01'], weight_dict['p_02']
-        lb, ub = sigmoid(lb.rsample()), sigmoid(ub.rsample())
-        lb, ub = 255*lb, 255*ub
+        lb, ub = lb.rsample(), ub.rsample()
         return _AddClipFilter(self.where, lb.item(), ub.item(), self, device)
 
     def _log_prob(self, action, weight_dict, device):
         
         lb, ub = weight_dict['p_01'], weight_dict['p_02']
-        n0, n1 = _logit(action.min_i/255), _logit(action.max_i/255)
-        n0, n1 = lb.log_prob(n0), ub.log_prob(n1)
+        n0, n1 = lb.log_prob(torch.tensor(action.min_i)), ub.log_prob(torch.tensor(action.max_i))
         lp = n0 + n1
         assert not torch.isnan(lp).any()
         return lp

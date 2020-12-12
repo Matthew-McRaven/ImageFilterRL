@@ -33,8 +33,8 @@ class FilterTreeActor(nn.Module):
             key = f'w_pre_{i:02d}'
             v[key] = nn.Linear(self._input_size, 1)
         for i in range(1, 3):
-            v[f'param_{i:02d}_mu'] = nn.Linear(self._input_size, 1)
-            v[f'param_{i:02d}_std'] = nn.Linear(self._input_size, 1)
+            v[f'param_{i:02d}_alpha'] = nn.Linear(self._input_size, 1)
+            v[f'param_{i:02d}_beta'] = nn.Linear(self._input_size, 1)
             
         self.weight_layers = torch.nn.ModuleDict(v)
 
@@ -77,9 +77,9 @@ class FilterTreeActor(nn.Module):
         weight_dict['w_swap_mindex'] = 0 - adjust
         weight_dict['w_swap_maxdex'] =  -adjust + (min_index if input[min_index,0].item() == 0 else (input.shape[0]))
         for i in range(1, 3):
-            mu = weight_dict[f'param_{i:02d}_mu']
-            std = weight_dict[f'param_{i:02d}_std'].abs() + 1e-2
-            weight_dict[f'p_{i:02d}'] = torch.distributions.Normal(mu, std)
+            alpha = weight_dict[f'param_{i:02d}_alpha'].abs() + 1
+            beta = weight_dict[f'param_{i:02d}_beta'].abs() + 1
+            weight_dict[f'p_{i:02d}'] = torch.distributions.beta.Beta(alpha, beta)
         print(weight_dict)
         return weight_dict
 

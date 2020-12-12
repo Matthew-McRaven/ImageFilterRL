@@ -36,8 +36,10 @@ class AddContrastFilter(AddFilter):
 
 class AddClipFilter(AddFilter):
     def __init__(self, where, min_i, max_i, *args):
+        print(f"{min_i},{max_i}")
         self.min_i, self.max_i = min_i, max_i
-        l, u = (min_i, max_i) if min_i<max_i else (max_i,min_i)
+        l, u = self.min_i, self.max_i
+        l, u = sorted([255*l,255*u])
         filter = functools.partial(libimg.interpolate.intensity_clip, new_min=l, new_max=u)
         super(AddClipFilter, self).__init__(where, filter, *args)
 
