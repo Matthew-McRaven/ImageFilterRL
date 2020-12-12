@@ -1,6 +1,7 @@
+import functools
 import numpy as np
-
 import libimg
+import libimg.equalize, libimg.interpolate
 
 from imgfiltrl.filters import Filters as _Filters
 class Action:
@@ -27,7 +28,7 @@ class AddFilter(Action):
         self.filter = filter
 class AddContrastFilter(AddFilter):
     def __init__(self, where, *args):
-        filter = None
+        filter = functools.partial(libimg.equalize.stretch_contrast)
         super(AddContrastFilter, self).__init__(where, filter, *args)
 
     def array(self):
@@ -36,7 +37,8 @@ class AddContrastFilter(AddFilter):
 class AddClipFilter(AddFilter):
     def __init__(self, where, min_i, max_i, *args):
         self.min_i, self.max_i = min_i, max_i
-        filter = None
+        l, u = (min_i, max_i) if min_i<max_i else (max_i,min_i)
+        filter = functools.partial(libimg.interpolate.intensity_clip, new_min=l, new_max=u)
         super(AddClipFilter, self).__init__(where, filter, *args)
 
     def array(self):

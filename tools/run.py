@@ -120,7 +120,8 @@ def main(args):
     hypers['device'] = 'cpu'
     hypers['epochs'] = args.epochs
     hypers['task_count'] = args.task_count
-    hypers['adapt_steps'] = hypers['episode_length'] = args.adapt_steps
+    hypers['adapt_steps'] = args.adapt_steps
+    hypers['episode_length'] = args.episode_length
     hypers['max_mlp_layers'] = 10
     hypers['max_cnn_layers'] = 10
     dset = mnist_dataset()
@@ -128,7 +129,8 @@ def main(args):
     network0, network1 = gen_classifier(dims, labels), gen_classifier(dims, labels)
     env = imgfiltrl.env.ImageClassifictionEnv(network0, network1, 
         torch.nn.CrossEntropyLoss(), train_dataset=dset.train_dset, 
-        validation_dataset=dset.validation_dset, normalize_fn=dset.normalize_fn
+        validation_dataset=dset.validation_dset, normalize_fn=dset.normalize_fn,
+        adapt_steps=args.adapt_steps
     
     )
 
@@ -161,7 +163,8 @@ if __name__ == "__main__":
     learn_alg_group.set_defaults(alg=vpg_helper)
     # Task distribution hyperparams.
     parser.add_argument("--epochs", default=10, type=int, help="Number of epochs for which to train the generator network.")
-    parser.add_argument("--adapt-steps", dest="adapt_steps", default=20, type=int, help="Number of epochs which to the generated network.")
-    parser.add_argument("--task-count", dest="task_count", default=3, type=int, help="Number of times of trials of the generator per epoch.")
+    parser.add_argument("--episode-length", dest="episode_length", default=5, type=int, help="Number of timestps per episode.")
+    parser.add_argument("--adapt-steps", dest="adapt_steps", default=5, type=int, help="Number of epochs which to the generated network.")
+    parser.add_argument("--task-count", dest="task_count", default=1, type=int, help="Number of times of trials of the generator per epoch.")
     args = parser.parse_args()
     main(args)

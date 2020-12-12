@@ -78,9 +78,9 @@ class FilterTreeActor(nn.Module):
         weight_dict['w_swap_maxdex'] =  -adjust + (min_index if input[min_index,0].item() == 0 else (input.shape[0]))
         for i in range(1, 3):
             mu = weight_dict[f'param_{i:02d}_mu']
-            std = weight_dict[f'param_{i:02d}_std']**2
-            weight_dict[f'p_{i:02d}'] = torch.distributions.Normal(mu, std**2)
-
+            std = weight_dict[f'param_{i:02d}_std'].abs() + 1e-2
+            weight_dict[f'p_{i:02d}'] = torch.distributions.Normal(mu, std)
+        print(weight_dict)
         return weight_dict
 
     def forward(self, input):
