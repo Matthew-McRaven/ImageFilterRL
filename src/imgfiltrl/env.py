@@ -1,10 +1,12 @@
 import collections
+import copy
 
 import gym, gym.spaces
 import more_itertools
 import numpy as np
 import torch
 import torchvision.datasets, torchvision.transforms
+import torch.nn as nn
 
 import librl.nn.core, librl.nn.classifier
 import librl.task, librl.task.classification
@@ -50,7 +52,15 @@ class ImageClassifictionEnv(gym.Env):
 
     def reset(self):
         self.state = collections.deque([], self.layer_depth)
-        # TODO: reset classification networks.
+
+        # At the start of a new training epoch, erase all learning of inner networks.
+        for x in self.baseline.parameters():
+            if x.dim() > 1:
+                nn.init.kaiming_normal_(x)
+        # For fairness, init both networks to same values.
+        params = copy.deepcopy(self.baseline.state_dict())
+        self.augmented.load_state_dict(params)
+
         return self._convert_state(self.state)
 
     def step(self, actions):
@@ -80,6 +90,8 @@ class ImageClassifictionEnv(gym.Env):
             if action.where == _where.front: self.state.popleft()
             elif action.where == _where.back: self.state.pop()
         else: raise NotImplementedError(f"Don't know this filter type: {type(action)}")
+
+
     def _transform_baseline(self):
         return self.normalize_fn
 
@@ -105,7 +117,6 @@ class ImageClassifictionEnv(gym.Env):
                 break
 
         
-        local_total, local_baseline_correct, local_augmented_correct = 0,0, 0
         self.baseline.eval(), self.augmented.eval()
         observed_valid_data = 0
         dataloader = torch.utils.data.DataLoader(self.validation_dataset, batch_size=100, shuffle=True)
