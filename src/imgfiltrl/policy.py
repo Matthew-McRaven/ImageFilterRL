@@ -5,13 +5,19 @@ from imgfiltrl import nodes
 def DecisionTree():
     # Add Nodes #
     # Prepend
-    node_prepend_01 = nodes.AddConstrastStretch(where.front)
-    node_prepend_02 = nodes.AddGlobalHistogramEq(where.front)
-    node_prepend_03 = nodes.AddLocalHistEq(where.front)
-    node_prepend_04 = nodes.AddClip(where.front)
-    node_prepend = ProbabalisticBranch([node_prepend_01, node_prepend_02, node_prepend_03, node_prepend_04], 
-        ["w_pre_01", "w_pre_02", "w_pre_03", "w_pre_04"]
-        #["ninf", "ninf", "w_pre_03", "ninf"]
+    prepend_list = [
+        nodes.AddConstrastStretch(where.front), #0
+        nodes.AddGlobalHistogramEq(where.front), #1
+        nodes.AddLocalHistEq(where.front), #2
+        nodes.AddBoxBlur(where.front), #3
+        nodes.AddGaussBlur(where.front), #4
+        nodes.AddMedianBlur(where.front), #5
+    ]
+    prepend_weights = [f"w_pre_{i:02d}" for i in range(len(prepend_list))]
+    masks = [i for i,_ in enumerate(prepend_weights)]#[3,4,5]
+    prepend_weights = [(v if i in masks else "ninf") for i,v in enumerate(prepend_weights)]
+    node_prepend = ProbabalisticBranch(prepend_list, 
+        prepend_weights
     )
     # Modify an existing node
     node_modify = nodes.ModifyFilter()

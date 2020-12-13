@@ -31,7 +31,7 @@ class FilterTreeActor(nn.Module):
         v['w_popb'] = nn.Linear(self._input_size, 1)
         v['w_modify'] = nn.Linear(self._input_size, 1)
         self.modify_layernum = nn.Linear(self._input_size, observation_space.shape[0])
-        for i in range(5):
+        for i in range(8):
             key = f'w_pre_{i:02d}'
             v[key] = nn.Linear(self._input_size, 1)
         for i in range(0, 3):

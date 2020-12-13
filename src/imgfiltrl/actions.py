@@ -4,7 +4,11 @@ import torch
 import libimg
 import libimg.equalize, libimg.interpolate
 import skimage.exposure
+import skimage.filters
+import skimage.morphology
+import skimage.util
 import libimg.image
+import libimg.functional.convolve
 
 from imgfiltrl.filters import Filters as _Filters
 class Action:
@@ -42,7 +46,7 @@ class AddContrastFilter(AddFilter):
         super(AddContrastFilter, self).__init__(where, filter, *args)
 
     def array(self):
-        return np.asarray([_Filters.ContrastStretch, 0, 0, 0], dtype=np.int)
+        return np.asarray([_Filters.ContrastStretch, 0, 0, 0], dtype=np.float)
 class AddGlobalHistogramEq(AddFilter):
     
     def __init__(self, where, *args):
@@ -52,14 +56,14 @@ class AddGlobalHistogramEq(AddFilter):
         super(AddGlobalHistogramEq, self).__init__(where, wrap, *args)
 
     def array(self):
-        return np.asarray([_Filters.GlobalHistEq, 0, 0, 0], dtype=np.int)
+        return np.asarray([_Filters.GlobalHistEq, 0, 0, 0], dtype=np.float)
 class AddLocalHistogramEq(AddFilter):
     def _create_filter(self, radius):
         self.radius = radius
-        import skimage.filters
-        import skimage.morphology
-        import skimage.util
+
         def wrap(image):
+            # Implemented as per:
+            #   https://scikit-image.org/docs/dev/auto_examples/color_exposure/plot_equalize.html#sphx-glr-auto-examples-color-exposure-plot-equalize-py
             selem = skimage.morphology.disk(5*radius.item())
             rv = skimage.exposure.rescale_intensity(image.data)
             rv = skimage.util.img_as_ubyte(rv).reshape(28, 28)
@@ -75,7 +79,7 @@ class AddLocalHistogramEq(AddFilter):
         super(AddLocalHistogramEq, self).__init__(where, filter, *args)
 
     def array(self):
-        return np.asarray([_Filters.LocalHistEq, 0, 0, 0], dtype=np.int)
+        return np.asarray([_Filters.LocalHistEq, 0, 0, 0], dtype=np.float)
 
     def modify(self, param_idx, param_shift):
         if param_idx == 0:
@@ -95,7 +99,7 @@ class AddClipFilter(AddFilter):
         super(AddClipFilter, self).__init__(where, filter, *args)
 
     def array(self):
-        return np.asarray([_Filters.Clip, self.radius, 0, 0], dtype=np.int)
+        return np.asarray([_Filters.Clip, 0, self.min_i, self.max_i], dtype=np.float)
 
     def modify(self, param_idx, param_shift):
         min_i, max_i = self.min_i, self.max_i
@@ -104,3 +108,63 @@ class AddClipFilter(AddFilter):
         if param_idx == 2:
             max_i = torch.clamp(self.max_i+param_shift, min=0, max=1)
         self.filter = self._create_filter(min_i, max_i)
+
+# Blurs
+
+class AddBoxBlur(AddFilter):
+    def _create_filter(self, radius):
+        self.radius = radius
+        filter = libimg.functional.convolve.BoxFilter(round(radius*5)) 
+        return filter.apply
+    def __init__(self, where, radius, *args):
+        filter = self._create_filter(radius)
+        super(AddBoxBlur, self).__init__(where, filter, *args)
+
+    def array(self):
+        return np.asarray([_Filters.BoxBlur, self.radius, 0, 0], dtype=np.float)
+
+    def modify(self, param_idx, param_shift):
+        if param_idx == 0:
+            radius = torch.clamp(self.radius+param_shift, min=0, max=1)
+            self.filter = self._create_filter(radius) 
+
+class AddGaussianBlur(AddFilter):
+    def _create_filter(self, sigma):
+        self.sigma = sigma
+        def wrap(image):
+            rv = skimage.filters.gaussian(image.data, sigma=2*sigma)
+            return libimg.image.Image(rv)
+        return wrap
+
+    def __init__(self, where, sigma, *args):
+        filter = self._create_filter(sigma)
+        super(AddGaussianBlur, self).__init__(where, filter, *args)
+
+    def array(self):
+        print(self.sigma)
+        return np.asarray([_Filters.GaussianBlur, 0, self.sigma, 0], dtype=np.float)
+    
+    def modify(self, param_idx, param_shift):
+        if param_idx == 1:
+            sigma = torch.clamp(self.sigma+param_shift, min=0, max=1)
+            self.filter = self._create_filter(sigma) 
+
+class AddMedianBlur(AddFilter):
+    def _create_filter(self, radius):
+        self.radius = radius
+        def wrap(image):
+            rv = skimage.filters.median(image.data, skimage.morphology.square(round(3*radius)))
+            return libimg.image.Image(rv)
+        return wrap
+
+    def __init__(self, where, radius, *args):
+        filter = self._create_filter(radius)
+        super(AddMedianBlur, self).__init__(where, filter, *args)
+
+    def array(self):
+        return np.asarray([_Filters.MedianBlur, self.radius, 0, 0], dtype=np.float)
+
+    def modify(self, param_idx, param_shift):
+        if param_idx == 0:
+            radius = torch.clamp(self.radius+param_shift, min=0, max=1)
+            self.filter = self._create_filter(radius) 

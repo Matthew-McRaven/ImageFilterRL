@@ -6,6 +6,10 @@ class Filters(enum.Enum):
     GlobalHistEq = 2
     LocalHistEq = 3
     Clip = 4
+    BoxBlur = 5
+    GaussianBlur = 6
+    MedianBlur = 7
+
     def __new__(cls, value):
         member = object.__new__(cls)
         member._value_ = value
@@ -13,3 +17,6 @@ class Filters(enum.Enum):
 
     def __int__(self):
         return self.value
+
+    def __float__(self):
+        return float(self.value)
