@@ -153,8 +153,9 @@ class AddMedianBlur(AddFilter):
     def _create_filter(self, radius):
         self.radius = radius
         def wrap(image):
-            rv = skimage.filters.median(image.data, skimage.morphology.square(round(3*radius)))
-            return libimg.image.Image(rv)
+            r = round(3*radius)
+            rv = skimage.filters.median(image.data.reshape(28,28), skimage.morphology.square(r))
+            return libimg.image.Image(rv.reshape(1,28,28))
         return wrap
 
     def __init__(self, where, radius, *args):
