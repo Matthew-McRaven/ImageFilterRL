@@ -29,12 +29,17 @@ class FilterTreeActor(nn.Module):
         v['w_swap'] = nn.Linear(self._input_size, 1)
         v['w_popf'] = nn.Linear(self._input_size, 1)
         v['w_popb'] = nn.Linear(self._input_size, 1)
+        v['w_modify'] = nn.Linear(self._input_size, 1)
+        self.modify_layernum = nn.Linear(self._input_size, observation_space.shape[0])
         for i in range(3):
             key = f'w_pre_{i:02d}'
             v[key] = nn.Linear(self._input_size, 1)
-        for i in range(1, 3):
+        for i in range(0, 3):
             v[f'param_{i:02d}_alpha'] = nn.Linear(self._input_size, 1)
             v[f'param_{i:02d}_beta'] = nn.Linear(self._input_size, 1)
+        for i in range(0, 3):
+            v[f'shift_{i:02d}_alpha'] = nn.Linear(self._input_size, 1)
+            v[f'shift_{i:02d}_beta'] = nn.Linear(self._input_size, 1)
             
         self.weight_layers = torch.nn.ModuleDict(v)
 
@@ -71,15 +76,29 @@ class FilterTreeActor(nn.Module):
             weight_dict['w_popf'] = torch.tensor(float("-inf")).to(input.device)
             weight_dict['w_popb'] = torch.tensor(float("-inf")).to(input.device)
             weight_dict['w_swap'] = torch.tensor(float("-inf")).to(input.device)
+
+        # Compute statistics for modify.
+        if input[0,0] == 0:
+            weight_dict['w_modify'] = torch.tensor(float("-inf")).to(input.device)
+        else:
+            layer_mask = torch.eq(input[:,0], 0)
+            modify_layernum = self.modify_layernum(output)
+            weight_dict['w_modify_layer'] = torch.nn.Softmax(dim=1)(modify_layernum) * ~layer_mask
+            
         # Get index of smallest filter type.
         min_index = torch.argmin(input[:,0])
         adjust = torch.tensor(.5, requires_grad=True)
         weight_dict['w_swap_mindex'] = 0 - adjust
         weight_dict['w_swap_maxdex'] =  -adjust + (min_index if input[min_index,0].item() == 0 else (input.shape[0]))
-        for i in range(1, 3):
+        for i in range(0, 3):
             alpha = weight_dict[f'param_{i:02d}_alpha'].abs() + 1
             beta = weight_dict[f'param_{i:02d}_beta'].abs() + 1
             weight_dict[f'p_{i:02d}'] = torch.distributions.beta.Beta(alpha, beta)
+        for i in range(0, 3):
+            alpha = weight_dict[f'shift_{i:02d}_alpha'].abs() + 1
+            beta = weight_dict[f'shift_{i:02d}_beta'].abs() + 1
+            weight_dict[f'shift_{i:02d}'] = torch.distributions.beta.Beta(alpha, beta)
+
         print(weight_dict)
         return weight_dict
 

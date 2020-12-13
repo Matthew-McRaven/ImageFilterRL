@@ -11,13 +11,13 @@ def DecisionTree():
         ["w_pre_01", "w_pre_02"]
     )
     # Modify an existing node
-    # TODO: Magic
+    node_modify = nodes.ModifyFilter()
     # Everything else
     node_swap = nodes.SwapFilters()
     node_popf = nodes.DeleteFilter(where.front)
     node_popb = nodes.DeleteFilter(where.back)
-    return ProbabalisticBranch([node_prepend, node_swap, node_popf, node_popb],
-        ["w_pre", "w_swap", "w_popf", "w_popb"]
+    return ProbabalisticBranch([node_prepend, node_swap, node_popf, node_popb, node_modify],
+        ["w_pre", "w_swap", "w_popf", "w_popb", "w_modify"]
     )
 
 # Represent a policy that uses a probabilistic decision tree to generate actions.

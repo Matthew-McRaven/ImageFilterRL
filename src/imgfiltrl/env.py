@@ -95,6 +95,12 @@ class ImageClassifictionEnv(gym.Env):
         elif isinstance(action, _actions.DeleteFilter):
             if action.where == _where.front: self.state.popleft()
             elif action.where == _where.back: self.state.pop()
+        # Modify
+        elif isinstance(action, _actions.ModifyFilter):
+            layer_num = round(action.layer_num.item())
+            param_idx = round(action.param_idx.item())
+            print(self.state, layer_num, param_idx)
+            self.state[layer_num].modify(param_idx, action.param_shift)
         else: raise NotImplementedError(f"Don't know this filter type: {type(action)}")
 
 
