@@ -79,12 +79,12 @@ class AddLocalHistogramEq(AddFilter):
         super(AddLocalHistogramEq, self).__init__(where, filter, *args)
 
     def array(self):
-        return np.asarray([_Filters.LocalHistEq, 0, 0, 0], dtype=np.float)
+        return np.asarray([_Filters.LocalHistEq, self.radius, 0, 0], dtype=np.float)
 
     def modify(self, param_idx, param_shift):
         if param_idx == 0:
             radius = torch.clamp(self.radius+param_shift, min=0, max=1)
-            self.filter = self._create_filter(radius)
+            self.filter = self._create_filter(radius.item())
         
 class AddClipFilter(AddFilter):
     def _create_filter(self, min_i, max_i):
@@ -104,9 +104,9 @@ class AddClipFilter(AddFilter):
     def modify(self, param_idx, param_shift):
         min_i, max_i = self.min_i, self.max_i
         if param_idx == 1:
-            min_i = torch.clamp(self.min_i+param_shift, min=0, max=1)
+            min_i = torch.clamp(self.min_i+param_shift, min=0, max=1).item()
         if param_idx == 2:
-            max_i = torch.clamp(self.max_i+param_shift, min=0, max=1)
+            max_i = torch.clamp(self.max_i+param_shift, min=0, max=1).item()
         self.filter = self._create_filter(min_i, max_i)
 
 # Blurs
@@ -126,7 +126,7 @@ class AddBoxBlur(AddFilter):
     def modify(self, param_idx, param_shift):
         if param_idx == 0:
             radius = torch.clamp(self.radius+param_shift, min=0, max=1)
-            self.filter = self._create_filter(radius) 
+            self.filter = self._create_filter(radius.item()) 
 
 class AddGaussianBlur(AddFilter):
     def _create_filter(self, sigma):
@@ -147,13 +147,14 @@ class AddGaussianBlur(AddFilter):
     def modify(self, param_idx, param_shift):
         if param_idx == 1:
             sigma = torch.clamp(self.sigma+param_shift, min=0, max=1)
-            self.filter = self._create_filter(sigma) 
+            self.filter = self._create_filter(sigma.item()) 
 
 class AddMedianBlur(AddFilter):
     def _create_filter(self, radius):
         self.radius = radius
         def wrap(image):
             r = round(3*radius)
+            # Flatten image to 2d, since median filter doesn't understand.
             rv = skimage.filters.median(image.data.reshape(28,28), skimage.morphology.square(r))
             return libimg.image.Image(rv.reshape(1,28,28))
         return wrap
@@ -168,4 +169,4 @@ class AddMedianBlur(AddFilter):
     def modify(self, param_idx, param_shift):
         if param_idx == 0:
             radius = torch.clamp(self.radius+param_shift, min=0, max=1)
-            self.filter = self._create_filter(radius) 
+            self.filter = self._create_filter(radius.item()) 
