@@ -3,6 +3,8 @@ import numpy as np
 import torch
 import libimg
 import libimg.equalize, libimg.interpolate
+import skimage.exposure
+import libimg.image
 
 from imgfiltrl.filters import Filters as _Filters
 class Action:
@@ -32,6 +34,8 @@ class AddFilter(Action):
         super(AddFilter, self).__init__(*args)
         self.where = where
         self.filter = filter
+    def modify(self, param_idx, param_shift):
+        pass
 class AddContrastFilter(AddFilter):
     def __init__(self, where, *args):
         filter = functools.partial(libimg.equalize.stretch_contrast)
@@ -39,10 +43,45 @@ class AddContrastFilter(AddFilter):
 
     def array(self):
         return np.asarray([_Filters.ContrastStretch, 0, 0, 0], dtype=np.int)
+class AddGlobalHistogramEq(AddFilter):
+    
+    def __init__(self, where, *args):
+        def wrap(image):
+            rv = skimage.exposure.equalize_hist(image.data)
+            return libimg.image.Image(rv)
+        super(AddGlobalHistogramEq, self).__init__(where, wrap, *args)
+
+    def array(self):
+        return np.asarray([_Filters.GlobalHistEq, 0, 0, 0], dtype=np.int)
+class AddLocalHistogramEq(AddFilter):
+    def _create_filter(self, radius):
+        self.radius = radius
+        import skimage.filters
+        import skimage.morphology
+        import skimage.util
+        def wrap(image):
+            selem = skimage.morphology.disk(5*radius.item())
+            rv = skimage.exposure.rescale_intensity(image.data)
+            rv = skimage.util.img_as_ubyte(rv).reshape(28, 28)
+            rv = skimage.filters.rank.equalize(rv, selem=selem)
+            rv = skimage.util.img_as_float(rv).reshape(1, 28, 28)
+            rv = skimage.exposure.rescale_intensity(image.data, out_range=(0., 255.))
+            return libimg.image.Image(rv)
+
+        return wrap
+
+    def __init__(self, where, radius, *args):
+        filter = self._create_filter(radius)
+        super(AddLocalHistogramEq, self).__init__(where, filter, *args)
+
+    def array(self):
+        return np.asarray([_Filters.LocalHistEq, 0, 0, 0], dtype=np.int)
 
     def modify(self, param_idx, param_shift):
-        pass
-
+        if param_idx == 0:
+            radius = torch.clamp(self.radius+param_shift, min=0, max=1)
+            self.filter = self._create_filter(radius)
+        
 class AddClipFilter(AddFilter):
     def _create_filter(self, min_i, max_i):
         self.min_i, self.max_i = min_i, max_i
@@ -56,7 +95,7 @@ class AddClipFilter(AddFilter):
         super(AddClipFilter, self).__init__(where, filter, *args)
 
     def array(self):
-        return np.asarray([_Filters.Clip, 0, self.min_i, self.max_i], dtype=np.int)
+        return np.asarray([_Filters.Clip, self.radius, 0, 0], dtype=np.int)
 
     def modify(self, param_idx, param_shift):
         min_i, max_i = self.min_i, self.max_i

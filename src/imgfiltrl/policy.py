@@ -6,9 +6,12 @@ def DecisionTree():
     # Add Nodes #
     # Prepend
     node_prepend_01 = nodes.AddConstrastStretch(where.front)
-    node_prepend_02 = nodes.AddClip(where.front)
-    node_prepend = ProbabalisticBranch([node_prepend_01, node_prepend_02], 
-        ["w_pre_01", "w_pre_02"]
+    node_prepend_02 = nodes.AddGlobalHistogramEq(where.front)
+    node_prepend_03 = nodes.AddLocalHistEq(where.front)
+    node_prepend_04 = nodes.AddClip(where.front)
+    node_prepend = ProbabalisticBranch([node_prepend_01, node_prepend_02, node_prepend_03, node_prepend_04], 
+        ["w_pre_01", "w_pre_02", "w_pre_03", "w_pre_04"]
+        #["ninf", "ninf", "w_pre_03", "ninf"]
     )
     # Modify an existing node
     node_modify = nodes.ModifyFilter()

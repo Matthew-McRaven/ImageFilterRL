@@ -31,7 +31,7 @@ class FilterTreeActor(nn.Module):
         v['w_popb'] = nn.Linear(self._input_size, 1)
         v['w_modify'] = nn.Linear(self._input_size, 1)
         self.modify_layernum = nn.Linear(self._input_size, observation_space.shape[0])
-        for i in range(3):
+        for i in range(5):
             key = f'w_pre_{i:02d}'
             v[key] = nn.Linear(self._input_size, 1)
         for i in range(0, 3):
@@ -50,9 +50,8 @@ class FilterTreeActor(nn.Module):
 
     def recurrent(self):
         return self.neural_module.recurrent()
-        
+    
     def save_hidden(self):
-        assert self.recurrent()
         return self.neural_module.save_hidden()
 
     def restore_hidden(self, state=None):
@@ -72,11 +71,11 @@ class FilterTreeActor(nn.Module):
             weight_dict[key] = self.weight_layers[key](output)
         # If values 1..n are all equally, they're probably all 0.
         # In that case, we shouldn't allow a delete.
-        if torch.eq(input[1], input[2:]).all():
+        if True: #if torch.eq(input[1], input[2:]).all():
             weight_dict['w_popf'] = torch.tensor(float("-inf")).to(input.device)
             weight_dict['w_popb'] = torch.tensor(float("-inf")).to(input.device)
             weight_dict['w_swap'] = torch.tensor(float("-inf")).to(input.device)
-
+        weight_dict['ninf'] = torch.tensor(float("-inf")).to(input.device)
         # Compute statistics for modify.
         if input[0,0] == 0:
             weight_dict['w_modify'] = torch.tensor(float("-inf")).to(input.device)
