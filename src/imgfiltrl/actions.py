@@ -195,7 +195,7 @@ class AddSkeletonize(AddFilter):
                 rv = skimage.morphology.medial_axis(bin)
             else: raise NotImplementedError("This skeletonization not offered.")
             # Remap to [0,255], otherwise NN will be confused.
-            rv = skimage.exposure.rescale_intensity(image.data, out_range=(0., 255.))
+            rv = skimage.exposure.rescale_intensity(rv, out_range=(0., 255.))
             return libimg.image.Image(rv.reshape(1,28,28))
         return wrap
 
@@ -212,3 +212,22 @@ class AddSkeletonize(AddFilter):
             threshold = np.clip(self.threshold+param_shift, a_min=0, a_max=1)
             assert isinstance(threshold, float)
             self.filter = self._create_filter(threshold)
+
+# Edge detection
+class AddEdgeDetection(AddFilter):
+    
+    def __init__(self, where, *args, kind=""):
+        def wrap(image):
+            rv = image.data.reshape(28,28)
+            if kind == "sobel": rv = skimage.filters.sobel(rv)
+            elif kind == "scharr": rv = skimage.filters.scharr(rv)
+            elif kind == "prewitt": rv = skimage.filters.prewitt(rv)
+            elif kind == "roberts": rv = skimage.filters.roberts(rv)
+            else: raise NotImplementedError(f"Haven't implemented filter type '{kind}'")
+            rv = skimage.exposure.equalize_hist(image.data)
+            rv = skimage.exposure.rescale_intensity(image.data, out_range=(0., 255.))
+            return libimg.image.Image(rv)
+        super(AddEdgeDetection, self).__init__(where, wrap, *args)
+
+    def array(self):
+        return np.asarray([_Filters.EdgeDetection, 0, 0, 0], dtype=np.float)

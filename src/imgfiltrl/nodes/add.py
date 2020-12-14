@@ -98,3 +98,14 @@ class AddMedialAxisSkeltonization(AddFilter):
         lp = self._dists(weight_dict).log_prob(torch.tensor(action.threshold, requires_grad=True))
         assert not torch.isnan(lp).any()
         return lp
+
+# Edge detection
+# Threshold + skeletonize the image.
+class AddEdgeDetector(AddFilter):
+    def __init__(self, where, *args, kind="sobel"):
+        super(AddEdgeDetector, self).__init__(where, *args)
+        self.kind = kind
+    def _sample(self, weight_dict, device):
+        return _actions.AddEdgeDetection(self.where, self, device, kind=self.kind)
+    def _log_prob(self, action, weight_dict, device):
+        return torch.tensor(0., requires_grad = True) 

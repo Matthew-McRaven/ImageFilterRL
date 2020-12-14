@@ -14,9 +14,13 @@ def DecisionTree():
         nodes.AddGaussBlur(where.front), #5
         nodes.AddMedianBlur(where.front), #6
         nodes.AddMedialAxisSkeltonization(where.front), #7
+        nodes.AddEdgeDetector(where.front, kind="sobel"), #8
+        nodes.AddEdgeDetector(where.front, kind="prewitt"), #9
+        nodes.AddEdgeDetector(where.front, kind="roberts"), #10
+        nodes.AddEdgeDetector(where.front, kind="scharr"), #11
     ]
     prepend_weights = [f"w_pre_{i:02d}" for i in range(len(prepend_list))]
-    masks = [i for i,_ in enumerate(prepend_weights)]#[3,4,5]
+    masks =  range(len(prepend_weights))
     prepend_weights = [(v if i in masks else "ninf") for i,v in enumerate(prepend_weights)]
     node_prepend = ProbabalisticBranch(prepend_list, 
         prepend_weights
