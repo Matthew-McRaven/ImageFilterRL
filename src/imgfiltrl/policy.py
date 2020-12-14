@@ -7,11 +7,13 @@ def DecisionTree():
     # Prepend
     prepend_list = [
         nodes.AddConstrastStretch(where.front), #0
-        nodes.AddGlobalHistogramEq(where.front), #1
-        nodes.AddLocalHistEq(where.front), #2
-        nodes.AddBoxBlur(where.front), #3
-        nodes.AddGaussBlur(where.front), #4
-        nodes.AddMedianBlur(where.front), #5
+        nodes.AddClip(where.front), #1
+        nodes.AddGlobalHistogramEq(where.front), #2
+        nodes.AddLocalHistEq(where.front), #3
+        nodes.AddBoxBlur(where.front), #4
+        nodes.AddGaussBlur(where.front), #5
+        nodes.AddMedianBlur(where.front), #6
+        nodes.AddMedialAxisSkeltonization(where.front), #7
     ]
     prepend_weights = [f"w_pre_{i:02d}" for i in range(len(prepend_list))]
     masks = [i for i,_ in enumerate(prepend_weights)]#[3,4,5]

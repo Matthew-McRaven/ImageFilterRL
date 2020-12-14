@@ -178,4 +178,37 @@ class AddMedianBlur(AddFilter):
         if param_idx == 0:
             radius = np.clip(self.radius+param_shift, a_min=0, a_max=1)
             assert isinstance(radius, float)
-            self.filter = self._create_filter(radius) 
+            self.filter = self._create_filter(radius)
+
+# Skeletonization
+class AddSkeletonize(AddFilter):
+    def _create_filter(self, threshold):
+        self.threshold = threshold
+        def wrap(image):
+            # Flatten image to 2d, since filter doesn't understand.
+            
+            bin = image.data.reshape(28, 28) > 255*threshold
+            
+            if self.alg == "skeletonize":
+                rv = skimage.morphology.skeletonize(bin)
+            elif self.alg == "medial_axis":
+                rv = skimage.morphology.medial_axis(bin)
+            else: raise NotImplementedError("This skeletonization not offered.")
+            # Remap to [0,255], otherwise NN will be confused.
+            rv = skimage.exposure.rescale_intensity(image.data, out_range=(0., 255.))
+            return libimg.image.Image(rv.reshape(1,28,28))
+        return wrap
+
+    def __init__(self, where, threshold, *args, alg="skeletonize"):
+        self.alg = alg
+        filter = self._create_filter(threshold)
+        super(AddSkeletonize, self).__init__(where, filter, *args)
+
+    def array(self):
+        return np.asarray([_Filters.MedialAxisSkeleton, 0, self.threshold, 0], dtype=np.float)
+
+    def modify(self, param_idx, param_shift):
+        if param_idx == 1:
+            threshold = np.clip(self.threshold+param_shift, a_min=0, a_max=1)
+            assert isinstance(threshold, float)
+            self.filter = self._create_filter(threshold)

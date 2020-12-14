@@ -9,6 +9,7 @@ class Filters(enum.Enum):
     BoxBlur = 5
     GaussianBlur = 6
     MedianBlur = 7
+    MedialAxisSkeleton = 8
 
     def __new__(cls, value):
         member = object.__new__(cls)

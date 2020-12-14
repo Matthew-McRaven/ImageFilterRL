@@ -84,3 +84,17 @@ class AddMedianBlur(AddFilter):
         lp = self._dists(weight_dict).log_prob(torch.tensor(action.radius, requires_grad=True))
         assert not torch.isnan(lp).any()
         return lp
+
+# Medial Axis skeletonization:
+# Threshold + skeletonize the image.
+class AddMedialAxisSkeltonization(AddFilter):
+    def _dists(self, weight_dict):
+        return weight_dict['p_01']
+    def _sample(self, weight_dict, device):
+        threshold_dist = self._dists(weight_dict)
+        threshold = threshold_dist.rsample()
+        return _actions.AddSkeletonize(self.where, threshold.item(), self, device)
+    def _log_prob(self, action, weight_dict, device):
+        lp = self._dists(weight_dict).log_prob(torch.tensor(action.threshold, requires_grad=True))
+        assert not torch.isnan(lp).any()
+        return lp
