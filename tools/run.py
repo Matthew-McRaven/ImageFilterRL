@@ -1,14 +1,10 @@
 import argparse
 import enum
 import functools
-import pickle
 import os
 
-import librl.agent.pg
-import librl.nn.core, librl.nn.actor, librl.nn.critic, librl.nn.pg_loss
-import pytest
+import dill
 import torch, torch.utils
-
 import librl.agent.pg
 import librl.nn.core, librl.nn.actor, librl.nn.critic, librl.nn.pg_loss
 import librl.reward, librl.replay.episodic
@@ -23,23 +19,19 @@ import imgfiltrl.replay
 class DirLogger:
     def __init__(self, log_dir):
         pass
-        #self.log_dir = log_dir
-        #os.makedirs(self.log_dir)
+        self.log_dir = log_dir
+        os.makedirs(self.log_dir)
 
     def __call__(self, epochs, task_samples):
-        return
         subdir = os.path.join(self.log_dir, f"epoch-{epochs}")
         # I would be very concerned if the subdir already exists
         os.makedirs(subdir)
-        accuracy_list = []
         for task_idx, task in enumerate(task_samples):
             task_subdir = os.path.join(subdir, f"task-{task_idx}")
             os.makedirs(task_subdir)
             for trajectory_idx, trajectory in enumerate(task.trajectories):
                 with open(os.path.join(task_subdir, f"traj{trajectory_idx}.pkl"), "wb") as fptr:
-                    pickle.dump(trajectory, fptr)
-                    accuracy_list.append(trajectory.extra[len(trajectory.extra)-1]['accuracy'][-1])
-        print(f"Average accuracy for epoch {epochs} was {sum(accuracy_list)/len(accuracy_list)}.")
+                    dill.dump(trajectory, fptr)
 
 
 ######################
@@ -134,12 +126,6 @@ def main(args):
     
     )
 
-    layers = [
-        librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
-        librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
-        librl.nn.core.cnn.pool_def(1, 1, 0, 1, True, 'max'),
-    ]
-
     critic_kernel= librl.nn.core.MLPKernel(4*3, [100, 100])
     critic = librl.nn.critic.ValueCritic(critic_kernel)
     actor_kernel= librl.nn.core.MLPKernel(4*3, [100, 100])
@@ -150,7 +136,7 @@ def main(args):
     dist = librl.task.TaskDistribution()
     dist.add_task(librl.task.Task.Definition(librl.task.ContinuousGymTask, env=env, agent=agent, episode_length=args.adapt_steps, 
         replay_ctor=imgfiltrl.replay.ProductEpisodeWithExtraLogs))
-    librl.train.train_loop.cc_episodic_trainer(hypers, dist, librl.train.cc.policy_gradient_step, )#log_fn=DirLogger(args.log_dir))
+    librl.train.train_loop.cc_episodic_trainer(hypers, dist, librl.train.cc.policy_gradient_step, log_fn=DirLogger(args.log_dir))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train generator network on a task for multiple epochs and record results.")
