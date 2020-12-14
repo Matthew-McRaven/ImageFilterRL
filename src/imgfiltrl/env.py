@@ -19,6 +19,7 @@ from torchvision.transforms.transforms import Lambda
 import imgfiltrl.reward
 import imgfiltrl.actions as _actions
 from imgfiltrl.nodes import where as _where
+from . import reward as _reward
 
 class ImageClassifictionEnv(gym.Env):
     def _shapes(self):
@@ -79,8 +80,11 @@ class ImageClassifictionEnv(gym.Env):
             augmented_correct.append(ac)
         reward_baseline = self.reward_fn(baseline_correct[-1], total[-1], self.classes, classifier=self.baseline)
         reward_augmented = self.reward_fn(augmented_correct[-1], total[-1], self.classes, classifier=self.augmented)
-        print(reward_baseline, reward_augmented)
-        return self._convert_state(self.state), (reward_augmented-reward_baseline), False, {}
+        ret_dict = {
+            'accuracy_baseline':list(map(lambda x,y: x/y, baseline_correct, total)),
+            'accuracy_experimental':list(map(lambda x,y: x/y, augmented_correct, total)),
+        }
+        return self._convert_state(self.state), (reward_augmented-reward_baseline), False, ret_dict
         
     def _apply_action(self, action):
         # Add

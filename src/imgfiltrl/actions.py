@@ -7,6 +7,7 @@ import skimage.exposure
 import skimage.filters
 import skimage.morphology
 import skimage.util
+import scipy.ndimage
 import libimg.image
 import libimg.functional.convolve
 
@@ -28,6 +29,7 @@ class ModifyFilter(Action):
         super(ModifyFilter, self).__init__(*args)
         self.layer_num = layer_num
         self.param_idx = param_idx
+        assert isinstance(param_shift, float)
         self.param_shift = param_shift
 class DeleteFilter(Action):
     def __init__(self, where, *args):
@@ -83,8 +85,9 @@ class AddLocalHistogramEq(AddFilter):
 
     def modify(self, param_idx, param_shift):
         if param_idx == 0:
-            radius = torch.clamp(self.radius+param_shift, min=0, max=1)
-            self.filter = self._create_filter(radius.item())
+            radius = np.clip(self.radius+param_shift, a_min=0, a_max=1)
+            assert isinstance(radius, float)
+            self.filter = self._create_filter(radius)
         
 class AddClipFilter(AddFilter):
     def _create_filter(self, min_i, max_i):
@@ -104,9 +107,11 @@ class AddClipFilter(AddFilter):
     def modify(self, param_idx, param_shift):
         min_i, max_i = self.min_i, self.max_i
         if param_idx == 1:
-            min_i = torch.clamp(self.min_i+param_shift, min=0, max=1).item()
+            min_i = np.clp(self.min_i+param_shift, a_min=0, a_max=1)
         if param_idx == 2:
-            max_i = torch.clamp(self.max_i+param_shift, min=0, max=1).item()
+            max_i = np.clip(self.max_i+param_shift, a_min=0, a_max=1)
+        assert isinstance(min_i, float)
+        assert isinstance(max_i, float)
         self.filter = self._create_filter(min_i, max_i)
 
 # Blurs
@@ -125,8 +130,9 @@ class AddBoxBlur(AddFilter):
 
     def modify(self, param_idx, param_shift):
         if param_idx == 0:
-            radius = torch.clamp(self.radius+param_shift, min=0, max=1)
-            self.filter = self._create_filter(radius.item()) 
+            radius = np.clip(self.radius+param_shift, a_min=0, a_max=1)
+            assert isinstance(radius, float)
+            self.filter = self._create_filter(radius) 
 
 class AddGaussianBlur(AddFilter):
     def _create_filter(self, sigma):
@@ -146,8 +152,9 @@ class AddGaussianBlur(AddFilter):
     
     def modify(self, param_idx, param_shift):
         if param_idx == 1:
-            sigma = torch.clamp(self.sigma+param_shift, min=0, max=1)
-            self.filter = self._create_filter(sigma.item()) 
+            sigma = np.clip(self.sigma+param_shift, a_min=0, a_max=1)
+            assert isinstance(sigma, float)
+            self.filter = self._create_filter(sigma) 
 
 class AddMedianBlur(AddFilter):
     def _create_filter(self, radius):
@@ -156,7 +163,7 @@ class AddMedianBlur(AddFilter):
             r = np.clip(round(3*radius), 0, 14)
             assert r < 14
             # Flatten image to 2d, since median filter doesn't understand.
-            rv = skimage.filters.median(image.data.reshape(28,28), skimage.morphology.square(r))
+            rv = scipy.ndimage.median_filter(image.data.reshape(28,28), size=r)
             return libimg.image.Image(rv.reshape(1,28,28))
         return wrap
 
@@ -169,5 +176,6 @@ class AddMedianBlur(AddFilter):
 
     def modify(self, param_idx, param_shift):
         if param_idx == 0:
-            radius = torch.clamp(self.radius+param_shift, min=0, max=1)
-            self.filter = self._create_filter(radius.item()) 
+            radius = np.clip(self.radius+param_shift, a_min=0, a_max=1)
+            assert isinstance(radius, float)
+            self.filter = self._create_filter(radius) 

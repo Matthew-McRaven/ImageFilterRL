@@ -19,7 +19,8 @@ class ModifyFilter(ProbabilisticLeaf):
         layer_dist, param_dist, list_shifts = self._dists(weight_dict)
         layer_num = layer_dist.sample()
         param_idx = param_dist.sample()
-        param_shift = list_shifts[round(param_idx.item())].sample()
+        param_shift = list_shifts[round(param_idx.item())].sample().item()
+        assert isinstance(param_shift, float)
         
         return _ModifyFilter(layer_num, param_idx, param_shift, self, device)
          
@@ -27,7 +28,8 @@ class ModifyFilter(ProbabilisticLeaf):
         layer_dist, param_dist, list_shifts = self._dists(weight_dict)
         layer_prob = layer_dist.log_prob(action.layer_num)
         param_prob = param_dist.log_prob(action.param_idx)
-        shift_prob = list_shifts[round(action.param_idx.item())].log_prob(action.param_shift)
+        shift = torch.tensor(action.param_shift, requires_grad=True)
+        shift_prob = list_shifts[round(action.param_idx.item())].log_prob(shift)
         print(layer_prob, param_prob, shift_prob)
         lp = layer_prob + param_prob + shift_prob
         assert not torch.isnan(lp).any()
