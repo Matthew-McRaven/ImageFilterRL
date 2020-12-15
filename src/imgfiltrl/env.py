@@ -70,6 +70,7 @@ class ImageClassifictionEnv(gym.Env):
 
     def step(self, actions):
         for action in actions: self._apply_action(action)
+        print(self.state)
         total = []
         baseline_correct, augmented_correct = [], []
         # Must `soft reset` each timestep.
@@ -81,7 +82,7 @@ class ImageClassifictionEnv(gym.Env):
         self.augmented.load_state_dict(params)
         for _ in range(self.adapt_steps + 1):
             t, bc, ac = self._train_step()
-            print(f"step {_:02d}", t, bc, ac)
+            print(f"step {_:02d}: total images {int(t)}. Baseline accuracy {bc.item()/t}. Exp. Accuracy {ac.item()/t}.")
             total.append(t)
             baseline_correct.append(bc)
             augmented_correct.append(ac)

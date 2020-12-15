@@ -30,7 +30,7 @@ class ModifyFilter(ProbabilisticLeaf):
         param_prob = param_dist.log_prob(action.param_idx)
         shift = torch.tensor(action.param_shift, requires_grad=True)
         shift_prob = list_shifts[round(action.param_idx.item())].log_prob(shift)
-        print(layer_prob, param_prob, shift_prob)
+        #print(layer_prob, param_prob, shift_prob)
         lp = layer_prob + param_prob + shift_prob
         assert not torch.isnan(lp).any()
         return lp

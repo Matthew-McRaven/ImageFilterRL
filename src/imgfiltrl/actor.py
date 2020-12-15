@@ -100,7 +100,7 @@ class FilterTreeActor(nn.Module):
             beta = weight_dict[f'shift_{i:02d}_beta'].abs() + 1
             weight_dict[f'shift_{i:02d}'] = torch.distributions.beta.Beta(alpha, beta)
 
-        print(weight_dict)
+        #print(weight_dict)
         return weight_dict
 
     def forward(self, input):

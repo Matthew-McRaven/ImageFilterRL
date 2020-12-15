@@ -97,7 +97,7 @@ class AddClipFilter(AddFilter):
         return functools.partial(libimg.interpolate.intensity_clip, new_min=l, new_max=u)
         
     def __init__(self, where, min_i, max_i, *args):
-        print(f"{min_i},{max_i}")
+        #print(f"{min_i},{max_i}")
         filter = self._create_filter(min_i, max_i)
         super(AddClipFilter, self).__init__(where, filter, *args)
 
@@ -149,7 +149,7 @@ class AddGaussianBlur(AddFilter):
         super(AddGaussianBlur, self).__init__(where, filter, *args)
 
     def array(self):
-        print(self.sigma)
+        #print(self.sigma)
         return np.asarray([_Filters.GaussianBlur, 0, self.sigma, 0], dtype=np.float64)
     
     def modify(self, param_idx, param_shift):
