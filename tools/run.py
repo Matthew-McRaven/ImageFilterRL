@@ -35,6 +35,7 @@ class DirLogger:
             for trajectory_idx, trajectory in enumerate(task.trajectories):
                 with open(os.path.join(task_subdir, f"traj{trajectory_idx}.pkl"), "wb") as fptr:
                     dill.dump(trajectory, fptr)
+        print(f"Finished epoch {epochs}\n\n")
 
 
 ######################
