@@ -18,3 +18,4 @@ torchvision==0.8.1
 typing-extensions==3.7.4.3
 scikit-image==0.17.2
 scikit-learn==0.23.2
+dill==0.3.3
