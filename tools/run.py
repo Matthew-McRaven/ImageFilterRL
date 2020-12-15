@@ -128,13 +128,14 @@ def main(args):
 
     critic_kernel= librl.nn.core.MLPKernel(4*3, [100, 100])
     critic = librl.nn.critic.ValueCritic(critic_kernel)
-    actor_kernel= librl.nn.core.MLPKernel(4*3, [100, 100])
+    actor_kernel= librl.nn.core.RecurrentKernel(4*3, 100, 3)
+    #actor_kernel= librl.nn.core.MLPKernel(4*3, [100, 100])
     actor = imgfiltrl.actor.FilterTreeActor(actor_kernel, env.observation_space)
     agent = args.alg(hypers, critic, actor)
     agent.train()
 
     dist = librl.task.TaskDistribution()
-    dist.add_task(librl.task.Task.Definition(librl.task.ContinuousGymTask, env=env, agent=agent, episode_length=args.adapt_steps, 
+    dist.add_task(librl.task.Task.Definition(librl.task.ContinuousGymTask, env=env, agent=agent, episode_length=args.episode_length, 
         replay_ctor=imgfiltrl.replay.ProductEpisodeWithExtraLogs))
     librl.train.train_loop.cc_episodic_trainer(hypers, dist, librl.train.cc.policy_gradient_step, log_fn=DirLogger(args.log_dir))
 
@@ -149,7 +150,7 @@ if __name__ == "__main__":
     learn_alg_group.set_defaults(alg=vpg_helper)
     # Task distribution hyperparams.
     parser.add_argument("--epochs", default=10, type=int, help="Number of epochs for which to train the generator network.")
-    parser.add_argument("--episode-length", dest="episode_length", default=5, type=int, help="Number of timestps per episode.")
+    parser.add_argument("--episode-length", dest="episode_length", default=200, type=int, help="Number of timestps per episode.")
     parser.add_argument("--adapt-steps", dest="adapt_steps", default=5, type=int, help="Number of epochs which to the generated network.")
     parser.add_argument("--task-count", dest="task_count", default=1, type=int, help="Number of times of trials of the generator per epoch.")
     args = parser.parse_args()

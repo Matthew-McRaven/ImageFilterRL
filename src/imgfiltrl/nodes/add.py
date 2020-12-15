@@ -28,9 +28,9 @@ class AddLocalHistEq(AddFilter):
     def _sample(self, weight_dict, device):
         radius_dist = self._dists(weight_dict)
         radius = radius_dist.rsample()
-        return _actions.AddLocalHistogramEq(self.where, radius, self, device)
+        return _actions.AddLocalHistogramEq(self.where, radius.item(), self, device)
     def _log_prob(self, action, weight_dict, device):
-        lp = self._dists(weight_dict).log_prob(action.radius)
+        lp = self._dists(weight_dict).log_prob(torch.tensor(action.radius, requires_grad=True))
         assert not torch.isnan(lp).any()
         return lp
 

@@ -48,8 +48,8 @@ class ImageClassifictionEnv(gym.Env):
         self.baseline = baseline
         self.augmented = augmented
         self.inner_loss = inner_loss
-        self.train_percent = .05
-        self.validation_percent = .1
+        self.train_percent = .01
+        self.validation_percent = .05
         
         self.train_dataset = train_dataset
         self.validation_dataset = validation_dataset
@@ -103,7 +103,7 @@ class ImageClassifictionEnv(gym.Env):
         elif isinstance(action, _actions.ModifyFilter):
             layer_num = round(action.layer_num.item())
             param_idx = round(action.param_idx.item())
-            print(self.state, layer_num, param_idx)
+            assert isinstance(action.param_shift, float)
             self.state[layer_num].modify(param_idx, action.param_shift)
         else: raise NotImplementedError(f"Don't know this filter type: {type(action)}")
 

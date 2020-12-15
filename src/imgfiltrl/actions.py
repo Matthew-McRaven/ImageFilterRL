@@ -48,7 +48,7 @@ class AddContrastFilter(AddFilter):
         super(AddContrastFilter, self).__init__(where, filter, *args)
 
     def array(self):
-        return np.asarray([_Filters.ContrastStretch, 0, 0, 0], dtype=np.float)
+        return np.asarray([_Filters.ContrastStretch, 0, 0, 0], dtype=np.float64)
 class AddGlobalHistogramEq(AddFilter):
     
     def __init__(self, where, *args):
@@ -58,7 +58,7 @@ class AddGlobalHistogramEq(AddFilter):
         super(AddGlobalHistogramEq, self).__init__(where, wrap, *args)
 
     def array(self):
-        return np.asarray([_Filters.GlobalHistEq, 0, 0, 0], dtype=np.float)
+        return np.asarray([_Filters.GlobalHistEq, 0, 0, 0], dtype=np.float64)
 class AddLocalHistogramEq(AddFilter):
     def _create_filter(self, radius):
         self.radius = radius
@@ -66,7 +66,7 @@ class AddLocalHistogramEq(AddFilter):
         def wrap(image):
             # Implemented as per:
             #   https://scikit-image.org/docs/dev/auto_examples/color_exposure/plot_equalize.html#sphx-glr-auto-examples-color-exposure-plot-equalize-py
-            selem = skimage.morphology.disk(5*radius.item())
+            selem = skimage.morphology.disk(5*radius)
             rv = skimage.exposure.rescale_intensity(image.data)
             rv = skimage.util.img_as_ubyte(rv).reshape(28, 28)
             rv = skimage.filters.rank.equalize(rv, selem=selem)
@@ -81,7 +81,7 @@ class AddLocalHistogramEq(AddFilter):
         super(AddLocalHistogramEq, self).__init__(where, filter, *args)
 
     def array(self):
-        return np.asarray([_Filters.LocalHistEq, self.radius, 0, 0], dtype=np.float)
+        return np.asarray([_Filters.LocalHistEq, self.radius, 0, 0], dtype=np.float64)
 
     def modify(self, param_idx, param_shift):
         if param_idx == 0:
@@ -102,12 +102,12 @@ class AddClipFilter(AddFilter):
         super(AddClipFilter, self).__init__(where, filter, *args)
 
     def array(self):
-        return np.asarray([_Filters.Clip, 0, self.min_i, self.max_i], dtype=np.float)
+        return np.asarray([_Filters.Clip, 0, self.min_i, self.max_i], dtype=np.float64)
 
     def modify(self, param_idx, param_shift):
         min_i, max_i = self.min_i, self.max_i
         if param_idx == 1:
-            min_i = np.clp(self.min_i+param_shift, a_min=0, a_max=1)
+            min_i = np.clip(self.min_i+param_shift, a_min=0, a_max=1)
         if param_idx == 2:
             max_i = np.clip(self.max_i+param_shift, a_min=0, a_max=1)
         assert isinstance(min_i, float)
@@ -119,14 +119,16 @@ class AddClipFilter(AddFilter):
 class AddBoxBlur(AddFilter):
     def _create_filter(self, radius):
         self.radius = radius
-        filter = libimg.functional.convolve.BoxFilter(round(radius*5)) 
+        radius = round(radius*5)
+        radius = np.clip(radius, 1, 14)
+        filter = libimg.functional.convolve.BoxFilter(radius) 
         return filter.apply
     def __init__(self, where, radius, *args):
         filter = self._create_filter(radius)
         super(AddBoxBlur, self).__init__(where, filter, *args)
 
     def array(self):
-        return np.asarray([_Filters.BoxBlur, self.radius, 0, 0], dtype=np.float)
+        return np.asarray([_Filters.BoxBlur, self.radius, 0, 0], dtype=np.float64)
 
     def modify(self, param_idx, param_shift):
         if param_idx == 0:
@@ -148,7 +150,7 @@ class AddGaussianBlur(AddFilter):
 
     def array(self):
         print(self.sigma)
-        return np.asarray([_Filters.GaussianBlur, 0, self.sigma, 0], dtype=np.float)
+        return np.asarray([_Filters.GaussianBlur, 0, self.sigma, 0], dtype=np.float64)
     
     def modify(self, param_idx, param_shift):
         if param_idx == 1:
@@ -172,7 +174,7 @@ class AddMedianBlur(AddFilter):
         super(AddMedianBlur, self).__init__(where, filter, *args)
 
     def array(self):
-        return np.asarray([_Filters.MedianBlur, self.radius, 0, 0], dtype=np.float)
+        return np.asarray([_Filters.MedianBlur, self.radius, 0, 0], dtype=np.float64)
 
     def modify(self, param_idx, param_shift):
         if param_idx == 0:
@@ -205,7 +207,7 @@ class AddSkeletonize(AddFilter):
         super(AddSkeletonize, self).__init__(where, filter, *args)
 
     def array(self):
-        return np.asarray([_Filters.MedialAxisSkeleton, 0, self.threshold, 0], dtype=np.float)
+        return np.asarray([_Filters.MedialAxisSkeleton, 0, self.threshold, 0], dtype=np.float64)
 
     def modify(self, param_idx, param_shift):
         if param_idx == 1:
@@ -230,4 +232,4 @@ class AddEdgeDetection(AddFilter):
         super(AddEdgeDetection, self).__init__(where, wrap, *args)
 
     def array(self):
-        return np.asarray([_Filters.EdgeDetection, 0, 0, 0], dtype=np.float)
+        return np.asarray([_Filters.EdgeDetection, 0, 0, 0], dtype=np.float64)

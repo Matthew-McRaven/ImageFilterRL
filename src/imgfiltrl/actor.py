@@ -61,9 +61,11 @@ class FilterTreeActor(nn.Module):
     def get_policy_weights(self, input):
         # Detect NAN poisoning.
         try:
-            output = self.neural_module(input).view(-1, self._input_size)
+            dim = functools.reduce(lambda x,y: x*y, self.neural_module.input_dimensions, 1)
+            input=input.float()
+            output = self.neural_module(input.view(-1, dim)).view(-1, self._input_size)
         except AssertionError as e:
-            print(input, self)
+            print(self._input_size,input.shape, self)
             raise e
 
         weight_dict = {}
@@ -79,10 +81,10 @@ class FilterTreeActor(nn.Module):
         # Compute statistics for modify.
         if input[0,0] == 0:
             weight_dict['w_modify'] = torch.tensor(float("-inf")).to(input.device)
-        else:
-            layer_mask = torch.eq(input[:,0], 0)
-            modify_layernum = self.modify_layernum(output)
-            weight_dict['w_modify_layer'] = torch.nn.Softmax(dim=1)(modify_layernum) * ~layer_mask
+
+        layer_mask = torch.eq(input[:,0], 0)
+        modify_layernum = self.modify_layernum(output)
+        weight_dict['w_modify_layer'] = torch.nn.Softmax(dim=1)(modify_layernum) * ~layer_mask
             
         # Get index of smallest filter type.
         min_index = torch.argmin(input[:,0])
