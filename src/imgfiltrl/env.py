@@ -80,21 +80,25 @@ class ImageClassifictionEnv(gym.Env):
         # states each timestep. 
         params = copy.deepcopy(self.baseline.state_dict())
         self.augmented.load_state_dict(params)
+        # Train both classifiers on the same data for a number of epochs.
         for _ in range(self.adapt_steps + 1):
             t, bc, ac = self._train_step()
             print(f"step {_:02d}: total images {int(t)}. Baseline accuracy {bc.item()/t}. Exp. Accuracy {ac.item()/t}.")
             total.append(t)
             baseline_correct.append(bc)
             augmented_correct.append(ac)
+        # Only concerned with accuracy from the last training step of each classifier.
         reward_baseline = self.reward_fn(baseline_correct[-1], total[-1], self.classes, classifier=self.baseline)
         reward_augmented = self.reward_fn(augmented_correct[-1], total[-1], self.classes, classifier=self.augmented)
         print(reward_baseline, reward_augmented)
+        # Record accuracies so we can make pretty graphs later.
         ret_dict = {
             'accuracy_baseline':list(map(lambda x,y: x/y, baseline_correct, total)),
             'accuracy_experimental':list(map(lambda x,y: x/y, augmented_correct, total)),
         }
         return self._convert_state(self.state), (reward_augmented-reward_baseline), False, ret_dict
         
+    # Apply the proposed action to self.state.
     def _apply_action(self, action):
         # Add
         if isinstance(action, _actions.AddFilter):
@@ -117,6 +121,7 @@ class ImageClassifictionEnv(gym.Env):
         else: raise NotImplementedError(f"Don't know this filter type: {type(action)}")
 
 
+    # Return a torch transform that applies applies batch normalization.
     def _transform_baseline(self, mean, std):
         normalize_fn = torchvision.transforms.Compose([
             # Apply mean / std.
@@ -124,6 +129,7 @@ class ImageClassifictionEnv(gym.Env):
         ) 
         return normalize_fn   
 
+    # Apply self.state's filters to an input image.
     def _filter_image(self, np_array) -> np.ndarray:
         out = np_array
         for idx, _ in enumerate(np_array):
@@ -133,6 +139,7 @@ class ImageClassifictionEnv(gym.Env):
             out[idx] = limg.data
         return out
 
+    # Return a torch transform that applies filters to input image, and applies batch normalization.
     def _transform_augmented(self, mean, std):
         normalize_fn = torchvision.transforms.Compose([
             # Stretch to [0, 255]
@@ -172,9 +179,9 @@ class ImageClassifictionEnv(gym.Env):
             librl.task.classification.train_one_batch(self.baseline, self.inner_loss, all_baseline, target)
             # Transform data for augmented.
             librl.task.classification.train_one_batch(self.augmented, self.inner_loss, all_augmented, target)
+            # Determine if we have seen enough data to abort training for this epoch.
             observed_train_data += len(data)
-            if observed_train_data >= self.train_percent * len(dataloader) * dataloader.batch_size:
-                break
+            if observed_train_data >= self.train_percent * len(dataloader) * dataloader.batch_size: break
 
         self.baseline.eval(), self.augmented.eval()
         observed_valid_data = 0
@@ -190,14 +197,16 @@ class ImageClassifictionEnv(gym.Env):
             _, selected_baseline = librl.task.classification.test_one_batch(self.baseline, self.inner_loss, all_baseline, target)
             # Transform data for augmented.
             _, selected_augmented = librl.task.classification.test_one_batch(self.augmented, self.inner_loss, all_augmented, target)
+            # Record accuracy statistics
+            total += float(target.shape[0])
             correct_baseline += torch.eq(selected_baseline, target).sum() 
             correct_augmented += torch.eq(selected_augmented, target).sum() 
-            total += float(target.shape[0])
+            # Determine if we have seen enough data to abort validation for this epoch.
             observed_valid_data += len(data)
-            if observed_valid_data >= self.validation_percent * len(dataloader) * dataloader.batch_size:
-                break
+            if observed_valid_data >= self.validation_percent * len(dataloader) * dataloader.batch_size: break
         return total, correct_baseline, correct_augmented
 
+    # Convert the action objects to a numpy array capable of being processed by a  NN.
     def _convert_state(self, state):
         np_state = np.zeros((self.layer_depth, self.layer_params))
         if state:

@@ -4,20 +4,6 @@ import numpy as np
 import torch 
 def Linear(correct, total, *args, **kwargs):
     return 100 * correct / total
-
-def count_params(model):
-    # Inspired by:
-    #   https://discuss.pytorch.org/t/how-do-i-check-the-number-of-parameters-of-a-model/4325/5
-    return sum([np.prod(p.size()) for p in model.parameters()])
-    
-# Penalizing growing the network to larger sizes.
-def SizePenalty(*args, classifier=None, **kwargs):
-    assert classifier is not None
-    return -math.sqrt(count_params(classifier))
-
-# Penalize networks that are very deep in one type but not the other.
-def DepthPenalty(*args, cnn_layers=None, mlp_layers=None, **kwargs):
-    return -math.sqrt(cnn_layers**2 + mlp_layers**2)
 class PolyAsymptotic:
     def __init__(self, neg_scale=-1, pos_scale=1, neg_clip=-5, pos_clip=10, penalty_fn = lambda *_,**__: 0):
         assert callable(penalty_fn)

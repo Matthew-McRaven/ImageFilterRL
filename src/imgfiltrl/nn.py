@@ -2,6 +2,8 @@ import functools
 
 import torch
 from torch import nn
+# Provide a class that takes in two neural networks and combines their outputs.
+# Provided with a tuple of inputs to forward, but only yields a single output.
 class FlattenCatKernel(nn.Module):
     def __init__(self, lhs, rhs):
         super(FlattenCatKernel, self).__init__()

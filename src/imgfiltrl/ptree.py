@@ -50,12 +50,6 @@ class ProbabalisticBranch(ProbablisticNode):
         log_prob = dist.log_prob(torch.IntTensor([idx]).to(device))
         # If our parent exists, ask it for the logprob of choosing us.
         return log_prob + (self.parent.log_prob(self, weight_dict, device) if self.parent else 0)
-
-    def __str__(self, level=0):
-        ret = "\t"*level+"node"+"\n"
-        for child in self.node_list:
-            ret += child.__str__(level=level+1)
-        return ret
         
 # If you want to add a new kind of action, you need to subclass this leaf node.
 # All you need to do is override _sample and _log_prob.
@@ -66,12 +60,4 @@ class ProbabilisticLeaf(ProbablisticNode):
     def log_prob(self, action, weight_dict, device):
         # If our parent exists, ask it for the logprob of choosing us.
         return self._log_prob(action, weight_dict, device) + (self.parent.log_prob(self, weight_dict, device) if self.parent else 0)
-
-    # Sample a single action using a weight dictionary.
-    def _sample(self, weight_dict, device): raise NotImplementedError("You need to implement this")
-    # Given a single action, compute the log probability that the action came from the current leaf.
-    def _log_prob(self, action, weight_dict, device): raise NotImplementedError("You need to implement this")
-    def __str__(self, level=0):
-        ret = "  "*level+self.__class__.__name__+"\n"
-        return ret
 

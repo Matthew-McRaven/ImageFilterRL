@@ -1,7 +1,8 @@
 from .ptree import *
 from .nodes import *
 from imgfiltrl import nodes
-
+# Create a probabilisitic decision tree corresponding to my possible actions.
+# Slides provide an example.
 def DecisionTree():
     # Add Nodes #
     # Prepend
@@ -12,7 +13,7 @@ def DecisionTree():
         nodes.AddLocalHistEq(where.front), #3
         nodes.AddBoxBlur(where.front), #4
         nodes.AddGaussBlur(where.front), #5
-        nodes.AddMedianBlur(where.front), #6
+        #nodes.AddMedianBlur(where.front), #6
         nodes.AddMedialAxisSkeltonization(where.front), #7
         nodes.AddEdgeDetector(where.front, kind="sobel"), #8
         nodes.AddEdgeDetector(where.front, kind="prewitt"), #9

@@ -2,6 +2,9 @@ import torch
 
 from ..ptree import ProbabilisticLeaf
 from ..actions import DeleteFilter as _DeleteFilter
+
+
+# Either pop the first or last filter.
 class DeleteFilter(ProbabilisticLeaf):
     def __init__(self, where, *args):
         super(DeleteFilter, self).__init__(*args)

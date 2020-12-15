@@ -4,6 +4,8 @@ import torch, torch.nn, torch.nn.functional, torch.distributions
 
 from ..ptree import ProbabilisticLeaf
 from ..actions import SwapFilters as _SwapFilters
+
+# Swap the filters at two indicies.
 class SwapFilters(ProbabilisticLeaf):
     def _dists(self, weight_dict):
         return torch.distributions.Uniform(

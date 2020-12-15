@@ -1,5 +1,6 @@
 import enum
 
+# Record what kinds of filters I allow
 class Filters(enum.Enum):
     NA = 0
     ContrastStretch = 1
@@ -12,11 +13,9 @@ class Filters(enum.Enum):
     MedialAxisSkeleton = 8
     EdgeDetection = 9
 
-    def __new__(cls, value):
-        member = object.__new__(cls)
-        member._value_ = value
-        return member
-
+    # enum implictly assigns .value
+    # Use these methods to convert enumerated type to float/int.
+    
     def __int__(self):
         return self.value
 

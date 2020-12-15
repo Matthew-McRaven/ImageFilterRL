@@ -12,6 +12,11 @@ import libimg.image
 import libimg.functional.convolve
 
 from imgfiltrl.filters import Filters as _Filters
+
+# Actions that correspond to each of the nodes present in .nodes/
+# This actions encapsulate the proabbility of an action occuring.
+# For actions corresponding to adding a filter, these actions are capable of converting themselves to a numpy array.
+# They support modification in place.
 class Action:
     def __init__(self, parent, device):
         self.parent = parent

@@ -6,6 +6,7 @@ import torch, torch.nn, torch.nn.functional, torch.distributions
 from ..ptree import ProbabilisticLeaf
 from ..actions import ModifyFilter as _ModifyFilter
 
+# Modify a single parameter of an existing filter.
 class ModifyFilter(ProbabilisticLeaf):
     def __init__(self, *args):
         super(ModifyFilter, self).__init__(*args)

@@ -8,7 +8,7 @@ import torch.optim
 
 from .policy import DecisionTree, TreePolicy
 
-# Actor that generates weightings for imgfiltrl.DecisionTree
+# Actor that generates weights for my decision policy tree.
 class FilterTreeActor(nn.Module):
     def __init__(self, neural_module,  observation_space, output_dimension=(10,)):
         super(FilterTreeActor, self).__init__()
@@ -89,6 +89,9 @@ class FilterTreeActor(nn.Module):
         # Get index of smallest filter type.
         min_index = torch.argmin(input[:,0])
         adjust = torch.tensor(.5, requires_grad=True)
+        # Force the swap indicies to be in the range of present filters.
+        # adjust either endpoint by .5 so that endpoints are equally probable as inner points
+        # after rounding.
         weight_dict['w_swap_mindex'] = 0 - adjust
         weight_dict['w_swap_maxdex'] =  -adjust + (min_index if input[min_index,0].item() == 0 else (input.shape[0]))
         for i in range(0, 3):

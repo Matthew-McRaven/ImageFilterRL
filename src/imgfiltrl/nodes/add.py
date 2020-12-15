@@ -5,17 +5,21 @@ import torch, torch.nn, torch.nn.functional, torch.distributions
 from ..ptree import ProbabilisticLeaf
 from .. import actions as _actions 
 
+# Base class for adding any filters.
+# All filters are either prepended or appended.
 class AddFilter(ProbabilisticLeaf):
     def __init__(self, where, *args):
         super(AddFilter, self).__init__(*args)
         self.where = where
 
+# Perform contrast stretching
 class AddConstrastStretch(AddFilter):
     def _sample(self, weight_dict, device):
         return _actions.AddContrastFilter(self.where, self, device)
     def _log_prob(self, action, weight_dict, device):
         return torch.tensor(0., requires_grad = True) 
 
+# Global & local histogram equalization
 class AddGlobalHistogramEq(AddFilter):
     def _sample(self, weight_dict, device):
         return _actions.AddGlobalHistogramEq(self.where, self, device)
@@ -34,6 +38,7 @@ class AddLocalHistEq(AddFilter):
         assert not torch.isnan(lp).any()
         return lp
 
+# Clip intensity values.
 class AddClip(AddFilter):
     def _sample(self, weight_dict, device):
         lb, ub = weight_dict['p_01'], weight_dict['p_02']
