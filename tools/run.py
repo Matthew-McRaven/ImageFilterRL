@@ -15,6 +15,7 @@ import librl.nn.classifier
 import imgfiltrl.actor
 import imgfiltrl.env
 import imgfiltrl.replay
+import imgfiltrl.nn
 
 class DirLogger:
     def __init__(self, log_dir):
@@ -94,14 +95,19 @@ def ppo_helper(hypers, critic_net, policy_net):
 
 def gen_classifier(dims, labels):
     layers = [
-        librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
-        librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
-        librl.nn.core.cnn.pool_def(1, 1, 0, 1, True, 'max'),
+        librl.nn.core.cnn.conv_def(4, 4, 1, 2, 1, False),
+        librl.nn.core.cnn.conv_def(4, 4, 1, 2, 1, False),
+        librl.nn.core.cnn.pool_def(2, 2, 0, 2, True, 'max'),
+        librl.nn.core.cnn.conv_def(8, 8, 2, 4, 1, False),
+        librl.nn.core.cnn.conv_def(8, 8, 2, 4, 1, False),
+        librl.nn.core.cnn.pool_def(2, 2, 0, 1, True, 'max'),
     ]
 
-    class_cnn = librl.nn.core.ConvolutionalKernel(layers, dims[1:], dims[0])
-    class_mlp = librl.nn.core.MLPKernel(functools.reduce(lambda x,y: x*y, class_cnn.output_dimension, 1))
-    class_kernel = librl.nn.core.sequential.SequentialKernel([class_cnn, class_mlp])
+    main_cnn = librl.nn.core.ConvolutionalKernel(layers, dims[1:], dims[0])
+    aug_cnn = librl.nn.core.ConvolutionalKernel(layers, dims[1:], 1)
+    stacker = imgfiltrl.nn.FlattenCatKernel(main_cnn, aug_cnn)
+    class_mlp = librl.nn.core.MLPKernel(functools.reduce(lambda x,y: x*y, stacker.output_dimensions, 1), [32], dropout=.2)
+    class_kernel = librl.nn.core.sequential.SequentialKernel([stacker, class_mlp])
     return librl.nn.classifier.Classifier(class_kernel, labels)
 
 #######################

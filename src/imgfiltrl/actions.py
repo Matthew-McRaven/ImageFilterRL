@@ -162,8 +162,7 @@ class AddMedianBlur(AddFilter):
     def _create_filter(self, radius):
         self.radius = radius
         def wrap(image):
-            r = np.clip(round(3*radius), 0, 14)
-            assert r < 14
+            r = np.clip(round(radius), 0, 7)
             # Flatten image to 2d, since median filter doesn't understand.
             rv = scipy.ndimage.median_filter(image.data.reshape(28,28), size=r)
             return libimg.image.Image(rv.reshape(1,28,28))

@@ -72,6 +72,13 @@ class ImageClassifictionEnv(gym.Env):
         for action in actions: self._apply_action(action)
         total = []
         baseline_correct, augmented_correct = [], []
+        # Must `soft reset` each timestep.
+        # Baseline network performs same task each iteration, while 
+        # augmented network performs a slightly different task each timestep.
+        # So, in fairness to augmented network, start them both from random
+        # states each timestep. 
+        params = copy.deepcopy(self.baseline.state_dict())
+        self.augmented.load_state_dict(params)
         for _ in range(self.adapt_steps + 1):
             t, bc, ac = self._train_step()
             print(f"step {_:02d}", t, bc, ac)
@@ -80,6 +87,7 @@ class ImageClassifictionEnv(gym.Env):
             augmented_correct.append(ac)
         reward_baseline = self.reward_fn(baseline_correct[-1], total[-1], self.classes, classifier=self.baseline)
         reward_augmented = self.reward_fn(augmented_correct[-1], total[-1], self.classes, classifier=self.augmented)
+        print(reward_baseline, reward_augmented)
         ret_dict = {
             'accuracy_baseline':list(map(lambda x,y: x/y, baseline_correct, total)),
             'accuracy_experimental':list(map(lambda x,y: x/y, augmented_correct, total)),
@@ -156,27 +164,31 @@ class ImageClassifictionEnv(gym.Env):
             std_augmented.append(torch.mean(data_augmented).item())
 
             data_baseline, data_augmented = data_baseline.to(self.device), data_augmented.to(self.device)
+            all_baseline = data_baseline, data_baseline
+            all_augmented = data_baseline, data_augmented
             target = target.to(self.device)
             # Transform data for baseline.
-            librl.task.classification.train_one_batch(self.baseline, self.inner_loss, data_baseline, target)
+            librl.task.classification.train_one_batch(self.baseline, self.inner_loss, all_baseline, target)
             # Transform data for augmented.
-            librl.task.classification.train_one_batch(self.augmented, self.inner_loss, data_augmented, target)
+            librl.task.classification.train_one_batch(self.augmented, self.inner_loss, all_augmented, target)
             observed_train_data += len(data)
             if observed_train_data >= self.train_percent * len(dataloader) * dataloader.batch_size:
                 break
 
         self.baseline.eval(), self.augmented.eval()
         observed_valid_data = 0
-        dataloader = torch.utils.data.DataLoader(self.validation_dataset, batch_size=100, shuffle=True)
+        dataloader = torch.utils.data.DataLoader(self.validation_dataset, batch_size=1000, shuffle=True)
         for _, (data, target) in enumerate(dataloader):
             data_baseline = self._transform_baseline(_mean(mu_baseline), _mean(std_baseline))(data)
             data_augmented = self._transform_augmented(_mean(mu_augmented), _mean(std_augmented))(data)
             data_baseline, data_augmented = data_baseline.to(self.device), data_augmented.to(self.device)
+            all_baseline = data_baseline, data_baseline
+            all_augmented = data_baseline, data_augmented
             target = target.to(self.device)
-                # Transform data for baseline.
-            _, selected_baseline = librl.task.classification.test_one_batch(self.baseline, self.inner_loss, data, target)
+            # Transform data for baseline.
+            _, selected_baseline = librl.task.classification.test_one_batch(self.baseline, self.inner_loss, all_baseline, target)
             # Transform data for augmented.
-            _, selected_augmented = librl.task.classification.test_one_batch(self.augmented, self.inner_loss, data, target)
+            _, selected_augmented = librl.task.classification.test_one_batch(self.augmented, self.inner_loss, all_augmented, target)
             correct_baseline += torch.eq(selected_baseline, target).sum() 
             correct_augmented += torch.eq(selected_augmented, target).sum() 
             total += float(target.shape[0])

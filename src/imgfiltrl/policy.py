@@ -38,7 +38,6 @@ def DecisionTree():
 # Represent a policy that uses a probabilistic decision tree to generate actions.
 class TreePolicy:
     def __init__(self, decision_tree, weights, device):
-        #print(decision_tree)
         self.decision_tree = decision_tree
         self.weights = weights
         self.device = device
