@@ -138,7 +138,7 @@ if __name__ == "__main__":
     learn_alg_group.set_defaults(alg=vpg_helper)
     # Task distribution hyperparams.
     parser.add_argument("--epochs", default=10, type=int, help="Number of epochs for which to train the filter generating network.")
-    parser.add_argument("--episode-length", dest="episode_length", default=2, type=int, help="Number of timestps per episode.")
-    parser.add_argument("--adapt-steps", dest="adapt_steps", default=2, type=int, help="Number of epochs for which to the classifier networks.")
+    parser.add_argument("--episode-length", dest="episode_length", default=200, type=int, help="Number of timestps per episode.")
+    parser.add_argument("--adapt-steps", dest="adapt_steps", default=5, type=int, help="Number of epochs for which to the classifier networks.")
     args = parser.parse_args()
     main(args)
